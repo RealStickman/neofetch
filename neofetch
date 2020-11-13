@@ -749,7 +749,8 @@ disk_display="off"
 #
 # Default:  'ascii'
 # Values:   'ascii', 'caca', 'catimg', 'chafa', 'jp2a', 'iterm2', 'off',
-#           'pot', 'termpix', 'pixterm', 'tycat', 'w3m', 'kitty', 'ueberzug'
+#           'pot', 'termpix', 'pixterm', 'tycat', 'w3m', 'kitty', 'ueberzug',
+#           'viu'
 
 # Flag:     --backend
 image_backend="ascii"
@@ -2568,10 +2569,21 @@ get_memory() {
                     "MemFree" | "Buffers" | "Cached" | "SReclaimable")
                         mem_used="$((mem_used-=${b/kB}))"
                     ;;
+
+                    # Available since Linux 3.14rc (34e431b0ae398fc54ea69ff85ec700722c9da773).
+                    # If detected this will be used over the above calculation for mem_used.
+                    "MemAvailable")
+                        mem_avail=${b/kB}
+                    ;;
                 esac
             done < /proc/meminfo
 
-            mem_used="$((mem_used / 1024))"
+            if [[ $mem_avail ]]; then
+                mem_used=$(((mem_total - mem_avail) / 1024))
+            else
+                mem_used="$((mem_used / 1024))"
+            fi
+
             mem_total="$((mem_total / 1024))"
         ;;
 
@@ -2979,9 +2991,9 @@ get_resolution() {
 
             elif [[ -d /sys/class/drm ]]; then
                 for dev in /sys/class/drm/*/modes; do
-                    read -r resolution _ < "$dev"
+                    read -r single_resolution _ < "$dev"
 
-                    [[ $resolution ]] && break
+                    [[ $single_resolution ]] && resolution="${single_resolution}, ${resolution}"
                 done
             fi
         ;;
@@ -3881,7 +3893,8 @@ image_backend() {
         "off") image_backend="off" ;;
 
         "caca" | "catimg" | "chafa" | "jp2a" | "iterm2" | "termpix" |\
-        "tycat" | "w3m" | "sixel" | "pixterm" | "kitty" | "pot", | "ueberzug")
+        "tycat" | "w3m" | "sixel" | "pixterm" | "kitty" | "pot", | "ueberzug" |\
+         "viu")
             get_image_source
 
             [[ ! -f "$image" ]] && {
@@ -3908,7 +3921,7 @@ image_backend() {
             err "Image: Unknown image backend specified '$image_backend'."
             err "Image: Valid backends are: 'ascii', 'caca', 'catimg', 'chafa', 'jp2a', 'iterm2',
                                             'kitty', 'off', 'sixel', 'pot', 'pixterm', 'termpix',
-                                            'tycat', 'w3m')"
+                                            'tycat', 'w3m', 'viu')"
             err "Image: Falling back to ascii mode."
             print_ascii
         ;;
@@ -4408,6 +4421,12 @@ display_image() {
         "tycat")
             tycat \
                 -g "${width}x${height}" \
+            "$image"
+        ;;
+
+        "viu")
+            viu \
+                -t -w "$((width / font_width))" -h "$((height / font_height))" \
             "$image"
         ;;
 
@@ -4986,7 +5005,7 @@ BARS:
 IMAGE BACKEND:
     --backend backend           Which image backend to use.
                                 Possible values: 'ascii', 'caca', 'catimg', 'chafa', 'jp2a',
-                                'iterm2', 'off', 'sixel', 'tycat', 'w3m', 'kitty'
+                                'iterm2', 'off', 'sixel', 'tycat', 'w3m', 'kitty', 'viu'
     --source source             Which image or ascii file to use.
                                 Possible values: 'auto', 'ascii', 'wallpaper', '/path/to/img',
                                 '/path/to/ascii', '/path/to/dir/', 'command output' [ascii]
@@ -5008,6 +5027,10 @@ IMAGE BACKEND:
     --tycat source              Shortcut to use 'tycat' backend.
     --w3m source                Shortcut to use 'w3m' backend.
     --ueberzug source           Shortcut to use 'ueberzug' backend
+<<<<<<< HEAD
+=======
+    --viu source                Shortcut to use 'viu' backend
+>>>>>>> a0221c5 (Merge branch 'master' of https://github.com/dylanaraps/neofetch)
     --off                       Shortcut to use 'off' backend (Disable ascii art).
 
     NOTE: 'source; can be any of the following: 'auto', 'ascii', 'wallpaper', '/path/to/img',
@@ -5237,7 +5260,7 @@ get_args() {
             "--source") image_source="$2" ;;
             "--ascii" | "--caca" | "--catimg" | "--chafa" | "--jp2a" | "--iterm2" | "--off" |\
             "--pot" | "--pixterm" | "--sixel" | "--termpix" | "--tycat" | "--w3m" | "--kitty" |\
-            "--ueberzug")
+            "--ueberzug" | "--viu")
                 image_backend="${1/--}"
                 case $2 in
                     "-"* | "") ;;
@@ -8517,7 +8540,7 @@ EOF
 EOF
         ;;
 
-        "NixOS"*)
+        "nixos_old"*)
             set_colors 4 6
             read -rd '' ascii_data <<'EOF'
 ${c1}          ::::.    ${c2}':::::     ::::'
@@ -8539,6 +8562,32 @@ ${c1}            .:::::::: ${c2}'::::::::::
 ${c1}           .::::''::::.     ${c2}'::::.
 ${c1}          .::::'   ::::.     ${c2}'::::.
 ${c1}         .::::      ::::      ${c2}'::::.
+EOF
+        ;;
+
+        "NixOS"*)
+            set_colors 4 6
+            read -rd '' ascii_data <<'EOF'
+${c1}          ▗██▙       ${c2}▜███▙    ▟██▖
+${c1}          ▜███▙       ${c2}▜███▙  ▟███▛
+${c1}           ▜███▙       ${c2}▜███▙▟███▛
+${c1}            ▜███▙       ${c2}▜██████▛
+${c1}     ▟█████████████████▙ ${c2}▜████▛     ${c1}▟▙
+${c1}    ▟███████████████████▙ ${c2}▜███▙    ${c1}▟██▙
+${c2}           ▄▄▄▄▖           ▜███▙  ${c1}▟███▛
+${c2}          ▟███▛             ▜██▛ ${c1}▟███▛
+${c2}         ▟███▛               ▜▛ ${c1}▟███▛   
+${c2}▟███████████▛                  ${c1}▟██████████▙
+${c2}▜██████████▛                  ${c1}▟███████████▛
+${c2}      ▟███▛ ${c1}▟▙               ▟███▛
+${c2}     ▟███▛ ${c1}▟██▙             ▟███▛
+${c2}    ▟███▛  ${c1}▜███▙           ▝▀▀▀▀
+${c2}    ▜██▛    ${c1}▜███▙ ${c2}▜██████████████████▛
+${c2}     ▜▛     ${c1}▟████▙ ${c2}▜████████████████▛
+${c1}           ▟██████▙       ${c2}▜███▙
+${c1}          ▟███▛▜███▙       ${c2}▜███▙
+${c1}         ▟███▛  ▜███▙       ${c2}▜███▙
+${c1}         ▝██▛    ▜███▙       ${c2}▜██▘
 EOF
         ;;
 
@@ -10525,31 +10574,18 @@ EOF
 
         ;;
 
-        "semc"*)
-            set_colors 2 8
+       	"semc"*)
+            set_colors 2 8 1
             read -rd '' ascii_data <<'EOF'
-${c1}              __.;=====;.__
-          _.=+==++=++=+=+===;.
-           -=+++=+===+=+=+++++=_
-      .     -=:``     `--==+=++==.
-     _vi,    `            --+=++++:
-    .uvnvi.       _._       -==+==+.
-   .vvnvnI`    .;==|==;.     :|=||=|.
-${c2}     _______._______.___  ___.  ______
-    /       |   ____|   \/   | /      |
-   |   (----|  |__  |  \  /  ||  ,----'
-    \   \   |   __| |  |\/|  ||  |
-.----)   |  |  |____|  |  |  ||  `----.
-|_______/   |_______|__|  |__| \______|
-
-${c1}   -1vvnvv.     `~+++`        ++|+++
-    +vnvnnv,                 `-|===
-     +vnvnvns.           .      :=-
-      -Invnvvnsi..___..=sv=.     `
-        +Invnvnvnnnnnnnnvvnn;.
-          ~|Invnvnvvnvvvnnv}+`
-             -~|{*l}*|~
-
+${c1}            /\
+     ______/  \
+    /      |()| ${c2}E M C
+${c1}   |   (-- |  |
+    \   \  |  |
+.----)   | |__|
+|_______/ / ${c3}"${c1}  \
+              ${c3}"
+            "
 EOF
 
         ;;
