@@ -5056,9 +5056,13 @@ IMAGE BACKEND:
     --w3m source                Shortcut to use 'w3m' backend.
     --ueberzug source           Shortcut to use 'ueberzug' backend
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     --viu source                Shortcut to use 'viu' backend
 >>>>>>> a0221c5 (Merge branch 'master' of https://github.com/dylanaraps/neofetch)
+=======
+    --viu source                Shortcut to use 'viu' backend
+>>>>>>> dylanaraps/master
     --off                       Shortcut to use 'off' backend (Disable ascii art).
 
     NOTE: 'source; can be any of the following: 'auto', 'ascii', 'wallpaper', '/path/to/img',
